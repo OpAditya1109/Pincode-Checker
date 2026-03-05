@@ -1,44 +1,4 @@
-import express from "express";
 import axios from "axios";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import serverless from "serverless-http";
-
-const app = express();
-
-/* ---------------- SECURITY ---------------- */
-
-app.use(helmet());
-
-/* ---------------- RATE LIMIT ---------------- */
-
-const limiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  message: {
-    error: "Too many requests, please try again later."
-  }
-});
-
-app.use(limiter);
-
-/* ---------------- CORS ---------------- */
-
-app.use(
-  cors({
-    origin: process.env.ALLOWED_ORIGIN || "*",
-    methods: ["GET", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
-  })
-);
-
-/* ---------------- ENV VARIABLES ---------------- */
-
-const DELHIVERY_TOKEN = process.env.DELHIVERY_TOKEN;
-const ORIGIN_PIN = process.env.ORIGIN_PIN;
-
-/* ---------------- DELIVERY ZONE LOGIC ---------------- */
 
 const zoneDays = {
   A: 2,
@@ -49,19 +9,13 @@ const zoneDays = {
   F: 7
 };
 
-/* ---------------- HEALTH CHECK ---------------- */
+export default async function handler(req, res) {
 
-app.get("/", (req, res) => {
-  res.json({
-    status: "Delivery API running"
-  });
-});
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-/* ---------------- DELIVERY API ---------------- */
-
-app.get("/check-delivery/:pincode", async (req, res) => {
-
-  const pincode = req.params.pincode;
+  const { pincode } = req.query;
 
   if (!pincode || !/^\d{6}$/.test(pincode)) {
     return res.status(400).json({
@@ -78,16 +32,16 @@ app.get("/check-delivery/:pincode", async (req, res) => {
           md: "S",
           ss: "Delivered",
           d_pin: pincode,
-          o_pin: ORIGIN_PIN,
+          o_pin: process.env.ORIGIN_PIN,
           cgm: 500
         },
         headers: {
-          Authorization: `Token ${DELHIVERY_TOKEN}`
+          Authorization: `Token ${process.env.DELHIVERY_TOKEN}`
         }
       }
     );
 
-    const zone = response.data?.[0]?.zone;
+    const zone = response?.data?.[0]?.zone;
 
     if (!zone) {
       return res.status(404).json({
@@ -104,7 +58,7 @@ app.get("/check-delivery/:pincode", async (req, res) => {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + deliveryDays + 1);
 
-    res.json({
+    return res.status(200).json({
       success: true,
       pincode,
       zone,
@@ -115,15 +69,10 @@ app.get("/check-delivery/:pincode", async (req, res) => {
 
   } catch (error) {
 
-    console.error("Delhivery API Error:", error.response?.data || error.message);
+    console.error("Delhivery Error:", error.response?.data || error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Unable to check delivery"
     });
   }
-
-});
-
-/* ---------------- EXPORT SERVERLESS HANDLER ---------------- */
-
-export default serverless(app);
+}
