@@ -3,6 +3,7 @@ import axios from "axios";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import serverless from "serverless-http";
 
 const app = express();
 
@@ -123,6 +124,6 @@ app.get("/check-delivery/:pincode", async (req, res) => {
 
 });
 
-/* ---------------- EXPORT FOR VERCEL ---------------- */
+/* ---------------- EXPORT SERVERLESS HANDLER ---------------- */
 
-export default app;
+export const handler = serverless(app);
