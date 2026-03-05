@@ -126,4 +126,4 @@ app.get("/check-delivery/:pincode", async (req, res) => {
 
 /* ---------------- EXPORT SERVERLESS HANDLER ---------------- */
 
-export const handler = serverless(app);
+export default serverless(app);
