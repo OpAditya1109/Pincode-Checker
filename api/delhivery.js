@@ -30,7 +30,7 @@ app.use(limiter);
 app.use(
   cors({
     origin: process.env.ALLOWED_ORIGIN || "*",
-    methods: ["GET"],
+    methods: ["GET", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
   })
 );
@@ -97,10 +97,7 @@ app.get("/check-delivery/:pincode", async (req, res) => {
       });
     }
 
-    /* Extract base zone (D1 → D) */
-
     const baseZone = zone.charAt(0);
-
     const deliveryDays = zoneDays[baseZone] || 6;
 
     const startDate = new Date();
@@ -129,10 +126,6 @@ app.get("/check-delivery/:pincode", async (req, res) => {
 
 });
 
-/* ---------------- START SERVER ---------------- */
+/* ---------------- EXPORT FOR VERCEL ---------------- */
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Delivery API running on port ${PORT}`);
-});
+export default app;
